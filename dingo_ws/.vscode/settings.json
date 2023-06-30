@@ -3,6 +3,10 @@
         "/opt/ros/noetic/lib/python3/dist-packages"
     ],
     "python.analysis.extraPaths": [
-        "/opt/ros/noetic/lib/python3/dist-packages"
+        "/opt/ros/noetic/lib/python3/dist-packages",
+        "./src/dingo_control/src",
+        "./src/dingo_hardware_interfacing/dingo_input_interfacing/src",
+        "./src/dingo_hardware_interfacing/dingo_servo_interfacing/src",
+        "./src/dingo_hardware_interfacing/dingo_peripheral_interfacing/src"
     ]
 }
