@@ -651,6 +651,7 @@
 
   <!-- JOINTS -->
   
+  <!-- FL -->
   <joint
     name="FL_theta1"
     type="revolute">
@@ -723,7 +724,7 @@
   </joint>
 
 
-
+  <!-- FR -->
   <joint
     name="FR_theta1"
     type="revolute">
@@ -795,9 +796,7 @@
       xyz="0 0 0" />
   </joint>
 
-
-
-
+  <!-- RL -->
   <joint
     name="RL_theta1"
     type="revolute">
@@ -869,8 +868,7 @@
       xyz="0 0 0" />
   </joint>
 
-
-
+  <!-- RR -->
   <joint
     name="RR_theta1"
     type="revolute">
@@ -942,9 +940,16 @@
       xyz="0 0 0" />
   </joint>
 
+  <!-- BASE_FOOTPRINT_LINK and JOINT -->
+  <link name="base_footprint">
+    
+  </link>
 
-
-
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="base_footprint"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
 
   <!-- ROS control plugin -->
   <gazebo>
