@@ -91,13 +91,13 @@ class Keyboard:
         elif key == keyboard.Key.right:
             msg.axes[3] = 0.0
         elif key == '0':
-            msg.axes[7] = 1
+            msg.axes[7] = 0
         elif key == '9':
-            msg.axes[7] = -1
+            msg.axes[7] = 0
         elif key == '8':
-            msg.axes[6] = 1
+            msg.axes[6] = 0
         elif key == '7':
-            msg.axes[6] = -1
+            msg.axes[6] = 0
 
         
         self.current_joy_message = msg
