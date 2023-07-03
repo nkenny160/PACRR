@@ -1,16 +1,41 @@
-import numpy
+import numpy as np
 import pygame
 import ctypes
 
 #SlAM algorithm
 
 
+class cells:
+    row, column = 400, 400
+    position = [[0 for  x in range(row)] for y in range(column)]
+
+def fillGrid():
+    for i in range(cells.row):
+        for j in range (cells.column):
+            cell_value = cells.position[i, j]
+            if cell_value == 1:
+                pygame.draw.rect(map._VARS['surf'], map.GREEN, (18, 18, 60, 60))
+            elif cell_value == 2:
+                pygame.draw.rect(map._VARS['surf'], map.RED, (18, 18, 60, 60))
+            elif cell_value == 3:
+                pygame.draw.rect(map._VARS['surf'], map.BLUE, (18, 18, 60, 60))
+            elif cell_value == 0:
+                pygame.draw.rect(map._VARS['surf'], map.BLACK, (18, 18, 60, 60))
+             
+
 class map:
     #public:
         #constants
-        GRIDSIZE = WIDTH, HEIGHT = 400, 400
+        CELLSIZE = 40
+        WIDTH = cells.column * CELLSIZE
+        HEIGHT = cells.row * CELLSIZE
+        GRIDSIZE = WIDTH, HEIGHT
         BlACK = (0, 0, 0)
         GRAY = (160, 160, 160)
+        WHITE = (255, 255, 255)
+        GREEN = (0, 255, 0)
+        RED = (255, 0, 0)
+        BLUE = (0, 0, 255)
         PADDING = TOPBOTPAD, LEFTRIGHTPAD = 40, 40
         #VARS
         _VARS = {'surf': False}
@@ -40,22 +65,37 @@ class map:
             #Horizontal Divisions
             for j in range(divisions):
                  pygame.draw.line(map._VARS['surf'], map.BLACK, (0 + map.LEFTRIGHTPAD, 0 + map.TOPBOTPAD + (j * cell_size_vert)), (map.WIDTH - map.LEFTRIGHTPAD, 0 + map.TOPBOTPAD + (j * cell_size_vert)), 2)
+        
+            screen = pygame.display.set_mode((map.WIDTH, map.HEIGHT))
+            pygame.display.set_caption("Gridmap Visualization")
 
         def eventChecker():
-             for event in pygame.event.get():
-                  if event.type == pygame.QUIT:
-                       sys.exit()
-                  elif event.type == KEYDOWN and event.jey == k_q:
-                       pygame.quit()
-                       sys.exit()   
-        def fillGrid():
-             
-             pygame.draw.rect(map._VARS['surf'], map.RED, (18, 18, 60, 60))
-             
+             #for event in pygame.event.get():
+                  #if event.type == pygame.QUIT:
+                       #sys.exit()
+                  #elif event.type == KEYDOWN and event.jey == k_q:
+                       #pygame.quit()
+                       #sys.exit() 
+            running = True
+            while running:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
 
-class cells:
-    row, column = 400, 400
-    position = [[0 for  x in range(row)] for y in range(column)]
+                # Clear the screen
+                map.screen.fill(map.WHITE)
+
+                # Draw the gridmap
+                fillGrid()
+
+                # Update the display
+                pygame.display.update()
+
+                # Quit pygame properly when the loop exits
+                pygame.quit()
+  
+        
+
 
 class pacrr:
     def init(self, world_size = 100.0, min_sensing_range = 0.3, max_sensing_range = 12, motion_noise = 1.0, sensor_noise = 1.0):
@@ -77,8 +117,8 @@ class pacrr:
 def main():
     for i in range(cells.row):
         for j in range(cells.column):
-            position[i][j] = 0 #initalizes grid to zero
-    cells.position[row/2][column/2] = 1 #initializes robot to be in center of grid
+            cells.position[i][j] = 0 #initalizes grid to zero
+    cells.position[cells.row/2][cells.column/2] = 1 #initializes robot to be in center of grid
     pygame.init()
     map._VARS['surf'] = pygame.display.set_mode(map.GRIDSIZE)
    
