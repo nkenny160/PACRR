@@ -1,28 +1,34 @@
 import numpy as np
 import pygame
 import ctypes
+import rospy
 
 #SlAM algorithm
-
+#def talker():
+    #pub = rospy.Publisher()
+    #rospy.init_node('talker', anonymous = True)
+    #rate = rospy.Rate(10)
+    #while not rospy.is_shutdown();
+        
 
 class cells:
     row, column = 400, 400
     position = [[0 for  x in range(row)] for y in range(column)]
 
-def fillGrid():
-    for i in range(cells.row):
-        for j in range (cells.column):
-            cell_value = cells.position[i, j]
-            if cell_value == 1:
-                pygame.draw.rect(map._VARS['surf'], map.GREEN, (18, 18, 60, 60))#where the robot has been
-            elif cell_value == 2:
-                pygame.draw.rect(map._VARS['surf'], map.RED, (18, 18, 60, 60))#obstacle
-            elif cell_value == 3:
-                pygame.draw.rect(map._VARS['surf'], map.BLUE, (18, 18, 60, 60))#planned path
-            elif cell_value == 0:
-                pygame.draw.rect(map._VARS['surf'], map.BLACK, (18, 18, 60, 60))#nothing
+    def fillGrid():
+        for i in range(cells.row):
+            for j in range (cells.column):
+                cell_value = cells.position[i, j]
+                if cell_value == 1:
+                    pygame.draw.rect(map._VARS['surf'], map.GREEN, (18, 18, 60, 60))#where the robot has been
+                elif cell_value == 2:
+                    pygame.draw.rect(map._VARS['surf'], map.RED, (18, 18, 60, 60))#obstacle
+                elif cell_value == 3:
+                    pygame.draw.rect(map._VARS['surf'], map.BLUE, (18, 18, 60, 60))#planned path
+                elif cell_value == 0:
+                    pygame.draw.rect(map._VARS['surf'], map.BLACK, (18, 18, 60, 60))#nothing
              
-            #pygame.draw.rect(screen, cell_color, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                #pygame.draw.rect(screen, cell_color, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
 
 class map:
