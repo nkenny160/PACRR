@@ -6,7 +6,9 @@ from std_msgs.msg import Float64
 import signal
 import socket
 import platform
+import math
 from dingo_peripheral_interfacing.msg import ElectricalMeasurements
+
 
 
 #Fetching is_sim and is_physical from arguments
@@ -27,6 +29,8 @@ from dingo_control.Kinematics import four_legs_inverse_kinematics
 from dingo_control.Config import Configuration
 from dingo_control.msg import TaskSpace, JointSpace, Angle
 from std_msgs.msg import Bool
+from sensor_msgs.msg import Imu
+from dingo_control.util import quaternion_to_euler
 
 if is_physical:
     from dingo_servo_interfacing.HardwareInterface import HardwareInterface
@@ -71,8 +75,11 @@ class DingoDriver:
             self.linkage = Leg_linkage(self.config)
             self.hardware_interface = HardwareInterface(self.linkage)
             # Create imu handle
-        if self.use_imu:
+        if self.use_imu == 1: # was originally self.use_imu
             self.imu = IMU()
+        elif self.use_imu == 2:
+            self.imu = rospy.Subscriber("notspot_imu/base_link_orientation", Imu, self.imu_data_callback)
+
 
         # Create controller and user input handles
         self.controller = Controller(
@@ -130,11 +137,16 @@ class DingoDriver:
                 
                 # Read imu data. Orientation will be None if no data was available
                 # rospy.loginfo(imu.read_orientation())
-                self.state.euler_orientation = (
-                    self.imu.read_orientation() if self.use_imu else np.array([0, 0, 0])
-                )
+                if self.use_imu == 1:
+                    self.state.euler_orientation = self.imu.read_orientation()
+                elif self.use_imu == 2:
+                    self.imu
+                    #rospy.loginfo("Euler Orientation:", self.state.euler_orientation)
+                else:
+                    self.state.euler_orientation = np.array([0, 0, 0])
+
                 [yaw,pitch,roll] = self.state.euler_orientation
-                # print('Yaw: ',np.round(yaw,2),'Pitch: ',np.round(pitch,2),'Roll: ',np.round(roll,2))
+                print('Yaw: ',np.round(yaw,2),'Pitch: ',np.round(pitch,2),'Roll: ',np.round(roll,2))
                 # Step the controller forward by dt
                 self.controller.run(self.state, command)
 
@@ -181,6 +193,10 @@ class DingoDriver:
                         break
                     self.rate.sleep()
     
+    def imu_data_callback(self, msg):
+    # Extract the necessary IMU data from the message and update the state object accordingly
+        self.state.euler_orientation = quaternion_to_euler(msg.orientation)
+
     def update_emergency_stop_status(self, msg):
         if msg == 1:
             self.state.currently_estopped = 1
