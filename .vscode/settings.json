@@ -1,3 +1,10 @@
 {
-    "cmake.sourceDirectory": "/home/admin/DingoQuadruped/dingo_ws/build/catkin_tools_prebuild"
+    "cmake.sourceDirectory": "/home/admin/DingoQuadruped/dingo_ws/build/catkin_tools_prebuild",
+    "ros.distro": "noetic",
+    "python.analysis.extraPaths": [
+        "./dingo_ws/src/dingo_control/src",
+        "./dingo_ws/src/dingo_hardware_interfacing/dingo_input_interfacing/src",
+        "./dingo_ws/src/dingo_hardware_interfacing/dingo_servo_interfacing/src",
+        "./dingo_ws/src/dingo_hardware_interfacing/dingo_peripheral_interfacing/src"
+    ]
 }

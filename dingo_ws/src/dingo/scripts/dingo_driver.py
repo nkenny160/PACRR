@@ -7,8 +7,9 @@ import signal
 import socket
 import platform
 import math
+from math import sin, cos, pi
 from dingo_peripheral_interfacing.msg import ElectricalMeasurements
-
+import tf
 
 
 #Fetching is_sim and is_physical from arguments
@@ -30,6 +31,8 @@ from dingo_control.Config import Configuration
 from dingo_control.msg import TaskSpace, JointSpace, Angle
 from std_msgs.msg import Bool
 from sensor_msgs.msg import Imu
+from geometry_msgs.msg import Point, Pose, Quaternion, Twist, Vector3
+from nav_msgs.msg import Odometry
 from dingo_control.util import quaternion_to_euler
 
 if is_physical:
@@ -50,6 +53,23 @@ class DingoDriver:
         self.task_command_sub = rospy.Subscriber("/task_space_cmd", TaskSpace, self.run_task_space_command)
         self.estop_status_sub = rospy.Subscriber("/emergency_stop_status", Bool, self.update_emergency_stop_status)
         self.external_commands_enabled = 0
+
+        # Create the odometry publisher
+        self.odom_pub = rospy.Publisher("odom", Odometry, queue_size=50)
+        self.odom_broadcaster = tf.TransformBroadcaster()
+
+        #Variables for navigation
+        self.prev_time = None
+        self.prev_linear_acceleration_x = None
+        self.prev_linear_acceleration_y = None
+        self.velocity_x = 0.0
+        self.velocity_y = 0.0
+        self.velocity_th = 0.0
+        self.x = 0.0
+        self.y = 0.0
+        self.th = 0.0
+
+        #back to og code
 
         if self.is_sim:
             self.sim_command_topics = ["/dingo_controller/FR_theta1/command",
@@ -123,6 +143,11 @@ class DingoDriver:
             if self.is_physical:
                 # Update the pwm widths going to the servos
                 self.hardware_interface.set_actuator_postions(self.state.joint_angles)
+            
+            #time variables used to update odometry
+            current_time = rospy.Time.now()
+            last_time = rospy.Time.now()
+            
             while self.state.currently_estopped == 0:
                 time.start = rospy.Time.now()
 
@@ -147,6 +172,51 @@ class DingoDriver:
 
                 [yaw,pitch,roll] = self.state.euler_orientation
                 print('Yaw: ',np.round(yaw,2),'Pitch: ',np.round(pitch,2),'Roll: ',np.round(roll,2))
+                [vx,vy,vth] = self.state.horizontal_velocity
+                print('vx: ',np.round(vx,2),'vy: ',np.round(vy,2),'vth: ',np.round(vth,2))
+                
+                #odom frame code
+                current_time = rospy.Time.now()
+
+                # compute odometry in a typical way given the velocities of the robot
+                dt = (current_time - last_time).to_sec()
+                delta_x = (self.velocity_x * cos(self.th) - self.velocity_y * sin(self.th)) * dt
+                delta_y = (self.velocity_x * sin(self.th) + self.velocity_y * cos(self.th)) * dt
+                delta_th = self.velocity_th * dt
+
+                self.x += delta_x
+                self.y += delta_y
+                self.th += delta_th
+
+                # since all odometry is 6DOF we'll need a quaternion created from yaw
+                odom_quat = tf.transformations.quaternion_from_euler(0, 0, self.th)
+
+                # first, we'll publish the transform over tf
+                self.odom_broadcaster.sendTransform(
+                    (self.x, self.y, 0.),
+                    odom_quat,
+                    current_time,
+                    "base_link",
+                    "odom"
+                )
+                
+                # next, we'll publish the odometry message over ROS
+                odom = Odometry()
+                odom.header.stamp = current_time
+                odom.header.frame_id = "odom"
+
+                # set the position
+                odom.pose.pose = Pose(Point(self.x, self.y, 0.), Quaternion(*odom_quat))
+
+                # set the velocity
+                odom.child_frame_id = "base_link"
+                odom.twist.twist = Twist(Vector3(self.velocity_x, self.velocity_y, 0), Vector3(0, 0, self.velocity_th))
+
+                # publish the message
+                self.odom_pub.publish(odom)
+
+                last_time = current_time
+
                 # Step the controller forward by dt
                 self.controller.run(self.state, command)
 
@@ -196,7 +266,36 @@ class DingoDriver:
     def imu_data_callback(self, msg):
     # Extract the necessary IMU data from the message and update the state object accordingly
         self.state.euler_orientation = quaternion_to_euler(msg.orientation)
+        self.calculate_velocity(msg.linear_acceleration.x, msg.linear_acceleration.y, msg.angular_velocity.z)
 
+    def calculate_velocity(self, linear_acceleration_x, linear_acceleration_y, angular_velocity_z):
+        current_time = rospy.Time.now()
+        linear_acceleration_x = linear_acceleration_x
+        if self.prev_time is None:
+            time_diff = rospy.Duration(0.0)
+        else:
+            time_diff = current_time - self.prev_time
+
+        if self.prev_linear_acceleration_x is None or self.prev_linear_acceleration_y is None:
+            self.prev_linear_acceleration_x = linear_acceleration_x
+            self.prev_linear_acceleration_y = linear_acceleration_y
+            self.prev_time = current_time
+            return
+
+        #dt = time_diff.to_sec()
+
+        self.velocity_x = -(linear_acceleration_x + self.prev_linear_acceleration_x) * (time_diff.to_sec() / 2.0)
+        self.velocity_y = (linear_acceleration_y + self.prev_linear_acceleration_y) * (time_diff.to_sec() / 2.0)
+        self.velocity_th = angular_velocity_z
+        #print('acceleration_x: ',np.round(linear_acceleration_x,2),'acceleration_y: ',np.round(linear_acceleration_y,2))
+        #print('vx: ',np.round(self.velocity_x,2),'vy: ',np.round(self.velocity_y,2),'vth: ',np.round(self.velocity_th,2))
+        self.state.horizontal_velocity = np.array([self.velocity_x, self.velocity_y, self.velocity_th])
+
+        self.prev_linear_acceleration_x = linear_acceleration_x
+        self.prev_linear_acceleration_y = linear_acceleration_y
+
+        self.prev_time = current_time
+        
     def update_emergency_stop_status(self, msg):
         if msg == 1:
             self.state.currently_estopped = 1
