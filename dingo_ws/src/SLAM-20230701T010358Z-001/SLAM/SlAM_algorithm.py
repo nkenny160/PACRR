@@ -2,6 +2,9 @@ import numpy as np
 import pygame
 import ctypes
 import rospy
+import math
+from math import cos, sin, radians, pi
+import matplotlib.pyplot as plt
 
 #SlAM algorithm
 #def talker():
@@ -9,8 +12,21 @@ import rospy
     #rospy.init_node('talker', anonymous = True)
     #rate = rospy.Rate(10)
     #while not rospy.is_shutdown();
-        
 
+def reader(f):
+    measurement = [line.split(",") for line in open(f)]       
+    angles = []
+    distances = []
+    for measure in measurement:
+        angles = []
+        distances = []
+        for measure in measurement:
+            angles.append(float(measure[0]))
+            distances.append(float(measure[0]))
+        angles = np.array(angles)
+        distances = np.array(distances)
+        return angles, distances
+    
 class cells:
     row, column = 400, 400
     position = [[0 for  x in range(row)] for y in range(column)]
@@ -129,7 +145,16 @@ def main():
     cells.position[cells.row/2][cells.column/2] = 1 #initializes robot to be in center of grid
     pygame.init()
     map._VARS['surf'] = pygame.display.set_mode(map.GRIDSIZE)
-   
+    ang, dist = reader("lidar01.csv")
+    ox = np.sin(ang) * dist
+    oy = np.cos(ang) * dist
+    plt.figure(figsize=(6,10))
+    plt.plot([oy, np.zeros(np.size(oy))], [ox, np.zeros(np.size(oy))], "ro-") # lines from 0,0 to the
+    plt.axis("equal")
+    bottom, top = plt.ylim()  # return the current ylim
+    plt.ylim((top, bottom)) # rescale y axis, to match the grid orientation
+    plt.grid(True)
+    plt.show()
     
 
     #NEED TO FINISH THIS PART
