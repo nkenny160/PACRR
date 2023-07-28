@@ -5,7 +5,8 @@ import rospy
 import math
 from math import cos, sin, radians, pi
 import matplotlib.pyplot as plt
-
+import lidar_to_grid_map as lg
+from collections import deque
 #SlAM algorithm
 #def talker():
     #pub = rospy.Publisher()
@@ -29,7 +30,7 @@ def reader(f):
     
 class cells:
     row, column = 400, 400
-    position = [[0 for  x in range(row)] for y in range(column)]
+    position = [[0 for  x in range(cells.row)] for y in range(column)]
 
     def fillGrid():
         for i in range(cells.row):
@@ -110,14 +111,46 @@ class map:
                 map.screen.fill(map.WHITE)
 
                 # Draw the gridmap
-                fillGrid()
+                cells.fillGrid()
 
                 # Update the display
                 pygame.display.update()
 
                 # Quit pygame properly when the loop exits
                 pygame.quit()
-  
+
+def flood_fill(cpoint, pmap):
+    """
+    cpoint: starting point (x,y) of fill
+    pmap: occupancy map generated from Bresenham ray-tracing
+    """
+    # Fill empty areas with queue method
+    sx, sy = pmap.shape
+    fringe = deque()
+    fringe.appendleft(cpoint)
+    while fringe:
+        n = fringe.pop()
+        nx, ny = n
+        # West
+        if nx > 0:
+            if pmap[nx - 1, ny] == 0.5:
+                pmap[nx - 1, ny] = 0.0
+                fringe.appendleft((nx - 1, ny))
+        # East
+        if nx < sx - 1:
+            if pmap[nx + 1, ny] == 0.5:
+                pmap[nx + 1, ny] = 0.0
+                fringe.appendleft((nx + 1, ny))
+        # North
+        if ny > 0:
+            if pmap[nx, ny - 1] == 0.5:
+                pmap[nx, ny - 1] = 0.0
+                fringe.appendleft((nx, ny - 1))
+        # South
+        if ny < sy - 1:
+            if pmap[nx, ny + 1] == 0.5:
+                pmap[nx, ny + 1] = 0.0
+                fringe.appendleft((nx, ny + 1))
         
 
 
@@ -155,7 +188,42 @@ def main():
     plt.ylim((top, bottom)) # rescale y axis, to match the grid orientation
     plt.grid(True)
     plt.show()
-    
-
+    map1 = np.ones((50, 50)) * 0.5
+    line = lg.bresenham((2, 2), (40, 30))
+    for l in line:
+        map1[l[0]][l[1]] = 1
+    plt.imshow(map1)
+    plt.colorbar()
+    plt.show()
+    line = lg.bresenham((2, 30), (40, 30))
+    for l in line:
+        map1[l[0]][l[1]] = 1
+    line = lg.bresenham((2, 30), (2, 2))
+    for l in line:
+        map1[l[0]][l[1]] = 1
+    plt.imshow(map1)
+    plt.colorbar()
+    plt.show()
+    flood_fill((10, 20), map1)
+    map_float = np.array(map1)/10.0
+    plt.imshow(map1)
+    plt.colorbar()
+    plt.show()
+    xyreso = 0.02  # x-y grid resolution
+    yawreso = math.radians(3.1)  # yaw angle resolution [rad]
+    ang, dist = reader("lidar01.csv")
+    ox = np.sin(ang) * dist
+    oy = np.cos(ang) * dist
+    pmap, minx, maxx, miny, maxy, xyreso = lg.generate_ray_casting_grid_map(ox, oy, xyreso, False)
+    xyres = np.array(pmap).shape
+    plt.figure(figsize=(20,8))
+    plt.subplot(122)
+    plt.imshow(pmap, cmap = "PiYG_r")
+    plt.clim(-0.4, 1.4)
+    plt.gca().set_xticks(np.arange(-.5, xyres[1], 1), minor = True)
+    plt.gca().set_yticks(np.arange(-.5, xyres[0], 1), minor = True)
+    plt.grid(True, which="minor", color="w", linewidth = .6, alpha = 0.5)
+    plt.colorbar()
+    plt.show()
     #NEED TO FINISH THIS PART
     
