@@ -7,6 +7,8 @@ from math import cos, sin, radians, pi
 import matplotlib.pyplot as plt
 import lidar_to_grid_map as lg
 from collections import deque
+from sensor_msgs.msg import LaserScan
+
 #SlAM algorithm
 #def talker():
     #pub = rospy.Publisher()
@@ -14,7 +16,8 @@ from collections import deque
     #rate = rospy.Rate(10)
     #while not rospy.is_shutdown();
 
-def reader(f):
+def reader(self, f):
+    self.lidar = rospy.Subscriber("notspot_imu/base_link_orientation", LiDAR, self.liDar_Detection)
     measurement = [line.split(",") for line in open(f)]       
     angles = []
     distances = []
@@ -151,6 +154,11 @@ def flood_fill(cpoint, pmap):
             if pmap[nx, ny + 1] == 0.5:
                 pmap[nx, ny + 1] = 0.0
                 fringe.appendleft((nx, ny + 1))
+
+def lidar_callback(msg):
+    # Process the LiDAR data here
+    # For example, you can access the LiDAR data using 'msg.ranges'
+    pass
         
 
 
@@ -172,6 +180,13 @@ class pacrr:
 #map optimization
 
 def main():
+    rospy.init_node('lidar_subscriber_node', anonymous=True)
+    
+    # Create a subscriber to the LiDAR topic
+    rospy.Subscriber('lidar_topic', LaserScan, lidar_callback)
+
+    # Keep the node running until Ctrl+C is pressed
+    rospy.spin()
     for i in range(cells.row):
         for j in range(cells.column):
             cells.position[i][j] = 0 #initalizes grid to zero

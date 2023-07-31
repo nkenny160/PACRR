@@ -101,7 +101,95 @@
     type="fixed">
         <parent link="base_link"/>
         <child link="laser_frame"/>
-        <origin xyz="0 0 0.05" rpy="0 0 0"/>
+        <origin xyz="0.017 0 0.05" rpy="0 0 0"/>
+  </joint>
+
+<!-- IMU representation -->
+  <!-- <link 
+    name="IMU_head_frame">
+        <visual>
+          <geometry>
+            <box size="0.02 0.02 0.02"/>
+          </geometry>
+          <material name="">
+              <color rgba="1 0 0 1" />
+          </material>
+        </visual>
+        <collision>
+          <geometry>
+            <box size="0.02 0.02 0.02"/>
+          </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.002"/>
+            <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
+        </inertial>
+  </link>
+
+  <joint 
+    name="IMU_head_joint" 
+    type="fixed">
+        <parent link="base_link"/>
+        <child link="IMU_head_frame"/>
+        <origin xyz="0 0 0.03" rpy="0 0 0"/>
+  </joint> -->
+
+  <link 
+    name="IMU_nose_frame">
+        <visual>
+          <geometry>
+            <box size="0.02 0.015 0.005"/>
+          </geometry>
+          <material name="">
+              <color rgba="1 0 0 1" />
+          </material>
+        </visual>
+        <collision>
+          <geometry>
+            <box size="0.02 0.015 0.005"/>
+          </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.002"/>
+            <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
+        </inertial>
+  </link>
+
+  <joint 
+    name="IMU_nose_joint" 
+    type="fixed">
+        <parent link="base_link"/>
+        <child link="IMU_nose_frame"/>
+        <origin xyz="0.18 0 0.04" rpy="0 0 0"/>
+  </joint>
+
+   <link 
+    name="IMU_tail_frame">
+        <visual>
+          <geometry>
+            <box size="0.02 0.015 0.005"/>
+          </geometry>
+          <material name="">
+              <color rgba="1 0 0 1" />
+          </material>
+        </visual>
+        <collision>
+          <geometry>
+            <box size="0.02 0.015 0.005"/>
+          </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.002"/>
+            <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
+        </inertial>
+  </link>
+
+  <joint 
+    name="IMU_tail_joint" 
+    type="fixed">
+        <parent link="base_link"/>
+        <child link="IMU_tail_frame"/>
+        <origin xyz="-0.1685 0 0.04" rpy="0 0 0"/>
   </joint>
 
   <!-- FL_link1 -->
@@ -975,6 +1063,48 @@
         <xyzOffset>0 0 0</xyzOffset>
         <rpyOffset>0 0 0</rpyOffset>
         <frameName>base_link</frameName>
+        <initialOrientationAsReference>false</initialOrientationAsReference>
+      </plugin>
+      <pose>0 0 0 0 0 0</pose>
+    </sensor>
+  </gazebo>
+
+  <gazebo reference="IMU_nose_frame">
+    <gravity>true</gravity>
+    <sensor name="imu_nose_sensor" type="imu">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <visualize>true</visualize>
+      <topic>__default_topic__</topic>
+      <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+        <topicName>notspot_imu/nose_base_link_orientation</topicName>
+        <bodyName>imu_nose_link</bodyName>
+        <updateRateHZ>15.0</updateRateHZ>
+        <gaussianNoise>0.0</gaussianNoise>
+        <xyzOffset>0 0 0</xyzOffset>
+        <rpyOffset>0 0 0</rpyOffset>
+        <frameName>IMU_nose_frame</frameName>
+        <initialOrientationAsReference>false</initialOrientationAsReference>
+      </plugin>
+      <pose>0 0 0 0 0 0</pose>
+    </sensor>
+  </gazebo>
+
+  <gazebo reference="IMU_tail_frame">
+    <gravity>true</gravity>
+    <sensor name="imu_tail_sensor" type="imu">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <visualize>true</visualize>
+      <topic>__default_topic__</topic>
+      <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+        <topicName>notspot_imu/tail_base_link_orientation</topicName>
+        <bodyName>imu_tail_link</bodyName>
+        <updateRateHZ>15.0</updateRateHZ>
+        <gaussianNoise>0.0</gaussianNoise>
+        <xyzOffset>0 0 0</xyzOffset>
+        <rpyOffset>0 0 0</rpyOffset>
+        <frameName>IMU_tail_frame</frameName>
         <initialOrientationAsReference>false</initialOrientationAsReference>
       </plugin>
       <pose>0 0 0 0 0 0</pose>
