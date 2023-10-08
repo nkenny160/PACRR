@@ -42,8 +42,11 @@ def bresenham(start, end):
     np.array([[4,4], [4,5], [5,6], [5,7], [5,8], [6,9], [6,10]])
     """
     # setup initial conditions
-    x1, y1 = start
-    x2, y2 = end
+    # x1, y1 = start
+    x1 = start
+    y1 = start
+    x2 = end
+    y2 = end
     dx = x2 - x1
     dy = y2 - y1
     is_steep = abs(dy) > abs(dx)  # determine how steep the line is

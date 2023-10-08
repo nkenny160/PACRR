@@ -35,10 +35,12 @@
     <node pkg="dingo" type="dingo_driver.py"
         name="dingo" args="$(arg is_sim) $(arg is_physical) $(arg use_imu)" output="screen"/>
 
-<!--     <!-- Robot localization -->
-    <!-- Start the robot_localization node for the head IMU -->
+<!-- Robot localization 
+    Start the robot_localization node for the head IMU
     <node pkg="robot_localization" type="ekf_localization_node" name="head_imu_localization" clear_params="true">
         <rosparam command="load" file="$(find dingo_gazebo)/config/head_imu_localization.yaml"/>
-    </node> -->
+    </node>
+-->
 </launch>
+
     

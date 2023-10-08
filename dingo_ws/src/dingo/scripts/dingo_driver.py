@@ -122,6 +122,8 @@ class DingoDriver:
         
     
     def run(self):
+        
+
         # Wait until the activate button has been pressed
         while not rospy.is_shutdown():
             if self.state.currently_estopped == 1:
@@ -147,6 +149,8 @@ class DingoDriver:
             #time variables used to update odometry
             current_time = rospy.Time.now()
             last_time = rospy.Time.now()
+            print("File opened")
+            
             
             while self.state.currently_estopped == 0:
                 time.start = rospy.Time.now()
@@ -171,10 +175,10 @@ class DingoDriver:
                     self.state.euler_orientation = np.array([0, 0, 0])
 
                 [yaw,pitch,roll] = self.state.euler_orientation
-                print('Yaw: ',np.round(yaw,2),'Pitch: ',np.round(pitch,2),'Roll: ',np.round(roll,2))
+                #print('Yaw: ',np.round(yaw,2),'Pitch: ',np.round(pitch,2),'Roll: ',np.round(roll,2))
                 [vx,vy,vth] = self.state.horizontal_velocity
-                print('vx: ',np.round(vx,2),'vy: ',np.round(vy,2),'vth: ',np.round(vth,2))
-                
+                #print('vx: ',np.round(vx,2),'vy: ',np.round(vy,2),'vth: ',np.round(vth,2))
+                # print(self.state.foot_locations)
                 #odom frame code
                 current_time = rospy.Time.now()
 
@@ -187,7 +191,9 @@ class DingoDriver:
                 self.x += delta_x
                 self.y += delta_y
                 self.th += delta_th
-
+                # print(self.x)
+                # print(self.y)
+                
                 # since all odometry is 6DOF we'll need a quaternion created from yaw
                 odom_quat = tf.transformations.quaternion_from_euler(0, 0, self.th)
 
@@ -219,6 +225,11 @@ class DingoDriver:
 
                 # Step the controller forward by dt
                 self.controller.run(self.state, command)
+                print(self.state.foot_locations)
+                f = open("feet.txt", "a")
+                f.write(str(self.state.foot_locations)+"\n")
+                f.close()
+                
 
                 if self.state.behavior_state == BehaviorState.TROT: #If trotting
                     self.controller.publish_joint_space_command(self.state.joint_angles)
@@ -246,6 +257,7 @@ class DingoDriver:
 
             if self.state.currently_estopped == 0:
                 rospy.loginfo("Manual Control deactivated. Now accepting external commands")
+                
                 command = self.input_interface.get_command(self.state,self.message_rate)
                 self.state.behavior_state = BehaviorState.REST
                 self.controller.run(self.state, command)
@@ -354,6 +366,7 @@ class DingoDriver:
 
 
 def signal_handler(sig, frame):
+    print("closing")
     sys.exit(0)
 
 def main():
