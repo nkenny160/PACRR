@@ -52,10 +52,11 @@ class DingoDriver:
         self.joint_command_sub = rospy.Subscriber("/joint_space_cmd", JointSpace, self.run_joint_space_command)
         self.task_command_sub = rospy.Subscriber("/task_space_cmd", TaskSpace, self.run_task_space_command)
         self.estop_status_sub = rospy.Subscriber("/emergency_stop_status", Bool, self.update_emergency_stop_status)
+        self.gazebo_odom_sub = rospy.Subscriber("/odom", Odometry, self.gazebo_odom_callback)
         self.external_commands_enabled = 0
 
         # Create the odometry publisher
-        self.odom_pub = rospy.Publisher("odom", Odometry, queue_size=50)
+        self.odom_pub = rospy.Publisher("dingoodom", Odometry, queue_size=50)
         self.odom_broadcaster = tf.TransformBroadcaster()
 
         #Variables for navigation
@@ -68,6 +69,8 @@ class DingoDriver:
         self.x = 0.0
         self.y = 0.0
         self.th = 0.0
+        f = open("feet.txt", "w")
+        f.close()
 
         #back to og code
 
@@ -119,8 +122,19 @@ class DingoDriver:
         rospy.loginfo("back leg x shift: %.2f", self.config.rear_leg_x_shift)
         rospy.loginfo("front leg x shift: %.2f", self.config.front_leg_x_shift)
 
+    def gazebo_odom_callback(self, msg):
+        # Extract position information from the Odometry message
+        position_x = msg.pose.pose.position.x
+        position_y = msg.pose.pose.position.y
+        position_z = msg.pose.pose.position.z
         
+        # Write position information to the file
+        with open("feet.txt", "a") as f:
+            f.write(f"Gazebo's Position (x, y, z): {position_x:.2f}, {position_y:.2f}, {position_z:.2f}\n")
+            f.write("Measured Position: "+"X: "+str(self.x)+" Y: "+str(self.y)+"\n")
+            f.write("Feet Position: "+str(self.state.foot_locations)+"\n")
     
+        
     def run(self):
         
 
@@ -177,7 +191,7 @@ class DingoDriver:
                 [yaw,pitch,roll] = self.state.euler_orientation
                 #print('Yaw: ',np.round(yaw,2),'Pitch: ',np.round(pitch,2),'Roll: ',np.round(roll,2))
                 [vx,vy,vth] = self.state.horizontal_velocity
-                #print('vx: ',np.round(vx,2),'vy: ',np.round(vy,2),'vth: ',np.round(vth,2))
+                # print('vx: ',np.round(vx,2),'vy: ',np.round(vy,2),'vth: ',np.round(vth,2))
                 # print(self.state.foot_locations)
                 #odom frame code
                 current_time = rospy.Time.now()
@@ -203,13 +217,13 @@ class DingoDriver:
                     odom_quat,
                     current_time,
                     "base_link",
-                    "odom"
+                    "dingoodom"
                 )
                 
                 # next, we'll publish the odometry message over ROS
                 odom = Odometry()
                 odom.header.stamp = current_time
-                odom.header.frame_id = "odom"
+                odom.header.frame_id = "dingoodom"
 
                 # set the position
                 odom.pose.pose = Pose(Point(self.x, self.y, 0.), Quaternion(*odom_quat))
@@ -217,7 +231,7 @@ class DingoDriver:
                 # set the velocity
                 odom.child_frame_id = "base_link"
                 odom.twist.twist = Twist(Vector3(self.velocity_x, self.velocity_y, 0), Vector3(0, 0, self.velocity_th))
-
+                # print(odom.pose)
                 # publish the message
                 self.odom_pub.publish(odom)
 
@@ -226,9 +240,9 @@ class DingoDriver:
                 # Step the controller forward by dt
                 self.controller.run(self.state, command)
                 print(self.state.foot_locations)
-                f = open("feet.txt", "a")
-                f.write(str(self.state.foot_locations)+"\n")
-                f.close()
+                # f = open("feet.txt", "a")
+                # f.write(str(self.state.foot_locations)+"\n")
+                # f.close()
                 
 
                 if self.state.behavior_state == BehaviorState.TROT: #If trotting
@@ -368,6 +382,8 @@ class DingoDriver:
 def signal_handler(sig, frame):
     print("closing")
     sys.exit(0)
+
+
 
 def main():
     """Main program
