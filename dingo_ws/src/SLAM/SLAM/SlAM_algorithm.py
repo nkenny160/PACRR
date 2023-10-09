@@ -6,8 +6,29 @@ from sensor_msgs.msg import LaserScan
 import sensor_msgs.msg
 from math import cos, sin, radians, pi
 import time
+from matplotlib.colors import ListedColormap
+import threading
+from matplotlib.animation import FuncAnimation
+
+class BSTNode:
+    def __init__(self, val=None):
+        self.left = None
+        self.right = None
+        self.val = val
 pub = rospy.Publisher('/revised_scan', LaserScan, queue_size = 10)
 scann = LaserScan()
+grid = np.zeros((9, 9)) #instead do a 1D array with each cell holding a tree with the head being the x coordinate and then the two branches being how much of the cell is taken and the y coordinate
+colors = ['#008000', '#ff0000']  # Replace with your desired colors
+cmap = ListedColormap(colors)
+centerX = 4.0
+centerY = 4.0
+upbound = 8.0
+lobound = 1.0
+flagX = np.zeros(100)
+flagY = np.zeros(100)
+
+
+
 
 def callback(msg):
     #print(len(msg.ranges)) len is 2019 from 0-360
@@ -21,52 +42,125 @@ def callback(msg):
     scann.time_increment = 4.99999987369e-05
     scann.range_min = 0.00999999977648
     scann.range_max = 32.0
-    scann.ranges = msg.ranges[0:1011]
-    scann.intensities = msg.intensities[0:1011]
-    print(scann)
+    scann.ranges = msg.ranges
+    # print("Ranges: ")
+    # print(len(msg.ranges))
+    scann.intensities = msg.intensities
+    # print(scann)
     pub.publish(scann)
     import lidar_to_grid_map as lg
-    # plt.plot([0, 1], [8, 9])
-    # plt.show()
-    # if counter == 0: 
-    #     i = 0
-    #     j = 0
-    #     counter += 1
-    y = range(1011)
-    angles = [0.0] * 1011
+
+    angles = [0.0] * 360
     angles[0] = scann.angle_min
-    ranger_rick = list(msg.ranges).copy()
-    for i in range(1010):
-        angles[i+1] = angles[i] + scann.angle_increment
-        
-        # print(i)
-    # print("two")
-    # ox = np.array([np.array(list()) for _ in y])
-    # oy = np.array([np.array(list()) for _ in y])
-    # while 1:
-    # plt.switch_backend('agg')
-    # plt.plot([0,1,2], [3,4,5])
-    # plt.savefig("lidartest.png")
-    # print("hey")
-    # print(i)
-    
+    LiDAR_Ranges = list(msg.ranges).copy()
+    for i in range(359):
+        angles[i] = i * math.pi / 180
+
 
         # Convert polar coordinates to Cartesian coordinates
-    x = [r * np.cos(angle) for r, angle in zip(ranger_rick, angles)]
-    y = [r * np.sin(angle) for r, angle in zip(ranger_rick, angles)]
+    for i in range(len(LiDAR_Ranges)):
+        if LiDAR_Ranges[i] == np.inf:
+            LiDAR_Ranges[i] = 10000
+    # print(LiDAR_Ranges)
+    # print(angles)
+    x = [r * np.cos(angle) for r, angle in zip(LiDAR_Ranges, angles)]
+    y = [r * np.sin(angle) for r, angle in zip(LiDAR_Ranges, angles)]
+    grid = np.zeros((9, 9))
+    for i in range(360):
+        if (abs(x[i])<100 and abs(y[i])<100 ):
+            # print("fun")
+            # print(i)
+            # print(angles[i])
+            # print(LiDAR_Ranges[i])
+            roundX = round(x[i])
 
+            
+
+            roundY = round(y[i])
+            newX = int(roundX+centerX)
+            newY = int(roundY+centerY)
+            # print("X")
+            # print(x[i])
+            # print(newX)
+            # print("Y")
+            # print(y[i])
+            # print(newY)
+
+            if newX > 0 and newX<9 and newY > 0 and newY <9:
+                grid[newX, newY] = 1
+
+    #initialize gridmap
+    # for i in range(360):
+    #     if round(x[i]) < centerX > lobound:
+    #         newX = centerX + round(x[i])
+    #     elif round(x[i]) >= centerX <= upbound:
+    #         newX = round(x[i]) - centerX
+    #     elif round(x[i]) > upbound:
+    #         newX = upbound + 1
+    #         flagX[i] = newX
+    #     elif round(x[i]) < lobound:
+    #         newX = lobound - 1
+    #         flagX[i] = newX
+    #     if round(y[i]) < centerY > lobound:
+    #         newY = centerY + round(y[i])
+    #     elif round(y[i]) >= centerY <= upbound:
+    #         newY = round(y[i]) - centerY
+    #     elif round(y[i]) > upbound:
+    #         newY = upbound + 1
+    #         flagY[i] = newY
+    #     elif round(y[i]) < lobound:
+    #         newY = lobound - 1
+    #         flagY[i] = newY
+    #     print(newX)
+    #     print(newY)
+    #     grid[int(newX),int(newY)] = 1.0
+    #     if flagX[i] != 0: 
+    #         if flagY[i] != 0:
+    #             grid[int(flagX[i]). int(flagY[i])] = 2.0
+    
+    print(np.matrix(grid))
+    plt.rcParams["figure.figsize"] = [6.00, 6.00]
+    plt.rcParams["figure.autolayout"] = True
+    plt.grid(color='gray', linestyle='--', linewidth=0.5)
+    im = plt.imshow(grid, cmap="binary", origin='lower')
+    plt.colorbar(im)
+    plt.savefig("plottest.png")
+    plt.clf()
+
+    # grid = np.zeros((9, 9))
     # Plotting
-    plt.figure(figsize=(6, 6))
-    plt.scatter(x, y)
-    plt.axhline(0, color='black',linewidth=0.5)
-    plt.axvline(0, color='black',linewidth=0.5)
-    plt.grid(color = 'gray', linestyle = '--', linewidth = 0.5)
-    plt.xlabel('X')
-    plt.ylabel('Y')
-    plt.title('Plot of Points in Polar Coordinates')
-    plt.axis('equal')  # Equal aspect ratio ensures that the plot is circular
-    plt.show()
+    # plt.figure(figsize=(6, 6))
+    # # plt.scatter(x, y)
+    # plt.axhline(0, color='black',linewidth=0.5)
+    # plt.axvline(0, color='black',linewidth=0.5)
+    # plt.grid(color = 'gray', linestyle = '--', linewidth = 0.5)
+    # plt.xlabel('X')
+    # plt.ylabel('Y')
+    # plt.title('Plot of Points in Polar Coordinates')
+    # plt.axis('equal')  # Equal aspect ratio ensures that the plot is circular
+    # # plt.show()
 
+    # # plt.figure(figsize=(6, 6))
+    # plt.imshow(grid, cmap='binary', origin='upper', extent=(-20, 20, -10, 20))
+
+    # # Customize the grid
+    # plt.grid(color='gray', linestyle='--', linewidth=0.5)
+
+    # # Customize the labels and title
+    # plt.xlabel('X')
+    # plt.ylabel('Y')
+    # plt.title('Grid Map')
+
+
+
+    # plt.show()
+
+    # plt.ion()
+
+    # fig = plt.figure() 
+    # ax = fig.add_subplot(111)
+
+    
 
 
 
@@ -126,11 +220,13 @@ def main():
     # time.sleep(10)
     pass
     
+    
 
 if __name__ == '__main__':
+   
     main()
     listener()
-
+    plt.show()
 
 
 
