@@ -34,12 +34,34 @@ from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Point, Pose, Quaternion, Twist, Vector3
 from nav_msgs.msg import Odometry
 from dingo_control.util import quaternion_to_euler
+from gazebo_msgs.msg import ModelStates
 
 if is_physical:
     from dingo_servo_interfacing.HardwareInterface import HardwareInterface
     from dingo_peripheral_interfacing.IMU import IMU
     from dingo_control.Config import Leg_linkage
 
+def euler_from_quaternion(x, y, z, w):
+        """
+        Convert a quaternion into euler angles (roll, pitch, yaw)
+        roll is rotation around x in radians (counterclockwise)
+        pitch is rotation around y in radians (counterclockwise)
+        yaw is rotation around z in radians (counterclockwise)
+        """
+        t0 = +2.0 * (w * x + y * z)
+        t1 = +1.0 - 2.0 * (x * x + y * y)
+        roll_x = math.atan2(t0, t1)
+     
+        t2 = +2.0 * (w * y - z * x)
+        t2 = +1.0 if t2 > +1.0 else t2
+        t2 = -1.0 if t2 < -1.0 else t2
+        pitch_y = math.asin(t2)
+     
+        t3 = +2.0 * (w * z + x * y)
+        t4 = +1.0 - 2.0 * (y * y + z * z)
+        yaw_z = math.atan2(t3, t4)
+     
+        return roll_x, pitch_y, yaw_z # in radians
 class DingoDriver:
     def __init__(self,is_sim, is_physical, use_imu):
         self.message_rate = 50
@@ -52,7 +74,7 @@ class DingoDriver:
         self.joint_command_sub = rospy.Subscriber("/joint_space_cmd", JointSpace, self.run_joint_space_command)
         self.task_command_sub = rospy.Subscriber("/task_space_cmd", TaskSpace, self.run_task_space_command)
         self.estop_status_sub = rospy.Subscriber("/emergency_stop_status", Bool, self.update_emergency_stop_status)
-        self.gazebo_odom_sub = rospy.Subscriber("/odom", Odometry, self.gazebo_odom_callback)
+        self.gazebo_odom_sub = rospy.Subscriber("/gazebo/model_states", ModelStates  ,self.gazebo_odom_callback)
         self.external_commands_enabled = 0
 
         # Create the odometry publisher
@@ -69,7 +91,9 @@ class DingoDriver:
         self.x = 0.0
         self.y = 0.0
         self.th = 0.0
-        f = open("feet.txt", "w")
+        self.counter = 0
+        
+        f = open("/home/pacrr/Documents/GitHub/PACRR/dingo_ws/src/feet.txt", "w")
         f.close()
 
         #back to og code
@@ -124,15 +148,36 @@ class DingoDriver:
 
     def gazebo_odom_callback(self, msg):
         # Extract position information from the Odometry message
-        position_x = msg.pose.pose.position.x
-        position_y = msg.pose.pose.position.y
-        position_z = msg.pose.pose.position.z
-        
+        position_x = msg.pose[2].position.x
+        position_y = msg.pose[2].position.y
+        position_z = msg.pose[2].position.z
+
+        orientation_x = msg.pose[2].orientation.x
+        orientation_y = msg.pose[2].orientation.y
+        orientation_z = msg.pose[2].orientation.z
+        orientation_w = msg.pose[2].orientation.w
+
+        roll, pitch, yaw = euler_from_quaternion(orientation_x, orientation_y, orientation_z, orientation_w)
+        yaw_deg = yaw*180/math.pi+180
+        # orientation_x = msg.pos
+        self.counter +=1
+        # if self.counter %100 == 0:
+        #     print(msg)
+        #     print(msg.pose[2])
+        #     print("\n")
+        #     print(roll)
+        #     print(pitch)
+        #     print(yaw)
+        #     print("\n")
+        #     print(yaw*180/math.pi+180)
+        #     print("\n")
+        # print("here")
         # Write position information to the file
-        with open("feet.txt", "a") as f:
-            f.write(f"Gazebo's Position (x, y, z): {position_x:.2f}, {position_y:.2f}, {position_z:.2f}\n")
+        with open("/home/pacrr/Documents/GitHub/PACRR/dingo_ws/src/feet.txt", "a") as f:
+            f.write(f"Gazebo's Position (x, y, z, theta): {position_x:.2f}, {position_y:.2f}, {position_z:.2f}, {yaw_deg:.2f}\n")
             f.write("Measured Position: "+"X: "+str(self.x)+" Y: "+str(self.y)+"\n")
             f.write("Feet Position: "+str(self.state.foot_locations)+"\n")
+
     
         
     def run(self):
@@ -163,8 +208,7 @@ class DingoDriver:
             #time variables used to update odometry
             current_time = rospy.Time.now()
             last_time = rospy.Time.now()
-            print("File opened")
-            
+
             
             while self.state.currently_estopped == 0:
                 time.start = rospy.Time.now()
@@ -239,10 +283,7 @@ class DingoDriver:
 
                 # Step the controller forward by dt
                 self.controller.run(self.state, command)
-                print(self.state.foot_locations)
-                # f = open("feet.txt", "a")
-                # f.write(str(self.state.foot_locations)+"\n")
-                # f.close()
+
                 
 
                 if self.state.behavior_state == BehaviorState.TROT: #If trotting
@@ -336,7 +377,7 @@ class DingoDriver:
             for i in 3:
                 foot_locations[i] = [msg.FR_foot[j], msg.FL_foot[j], msg.RR_foot[j], msg.RL_foot[j]]
                 j = j+1
-            print(foot_locations)
+            # print(foot_locations)
             joint_angles = self.controller.inverse_kinematics(foot_locations, self.config)
             if self.is_sim:
                 self.publish_joints_to_sim(self, joint_angles)
@@ -356,7 +397,7 @@ class DingoDriver:
             for i in 3:
                 joint_angles[i] = [msg.FR_foot[j], msg.FL_foot[j], msg.RR_foot[j], msg.RL_foot[j]]
                 j = j+1
-            print(joint_angles)
+            # print(joint_angles)
 
             if self.is_sim:
                 self.publish_joints_to_sim(self, joint_angles)
