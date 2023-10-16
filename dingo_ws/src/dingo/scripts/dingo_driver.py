@@ -75,6 +75,7 @@ class DingoDriver:
         self.task_command_sub = rospy.Subscriber("/task_space_cmd", TaskSpace, self.run_task_space_command)
         self.estop_status_sub = rospy.Subscriber("/emergency_stop_status", Bool, self.update_emergency_stop_status)
         self.gazebo_odom_sub = rospy.Subscriber("/gazebo/model_states", ModelStates  ,self.gazebo_odom_callback)
+
         self.external_commands_enabled = 0
 
         # Create the odometry publisher
@@ -173,13 +174,20 @@ class DingoDriver:
         #     print("\n")
         # print("here")
         # Write position information to the file
+        now = rospy.get_rostime()
+        total_seconds = now.secs + now.nsecs * 1e-9  # Total time in seconds with nanosecond precision
+        formatted_time = "{:.3f}".format(total_seconds)  # Format total seconds with 3 decimal places of accuracy
+
+        # rospy.loginfo("Current time %i %i", now.secs, now.nsecs)
         with open("/home/pacrr/Documents/GitHub/PACRR/dingo_ws/src/feet.txt", "a") as f:
-            f.write(f"Gazebo's Position (x, y, z, theta): {position_x:.2f}, {position_y:.2f}, {position_z:.2f}, {yaw_deg:.2f}\n")
-            f.write("Measured Position: "+"X: "+str(self.x)+" Y: "+str(self.y)+"\n")
-            f.write("Feet Position: "+str(self.state.foot_locations)+"\n")
+            # f.write(f"Gazebo's Position (x, y, z, theta, time):{position_x:.2f},{position_y:.2f},{position_z:.2f},{yaw_deg:.2f}\n")
+            
+            f.write(f"Gazebo's Position (x, y, z, theta, time):{position_x:.2f},{position_y:.2f},{position_z:.2f},{yaw_deg:.2f},{formatted_time}\n")
+            f.write("Measured Position x, y:"+str(self.x)+","+str(self.y)+"\n")
+            f.write("Feet Position:"+str(self.state.foot_locations)+";\n")
 
     
-        
+    
     def run(self):
         
 
