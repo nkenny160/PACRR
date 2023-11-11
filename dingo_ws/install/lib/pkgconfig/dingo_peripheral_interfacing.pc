@@ -1,0 +1,8 @@
+prefix=/home/pacrr/Documents/GitHub/PACRR/dingo_ws/install
+
+Name: dingo_peripheral_interfacing
+Description: Description of dingo_peripheral_interfacing
+Version: 0.0.0
+Cflags: -I${prefix}/include
+Libs: -L${prefix}/lib 
+Requires: rospy message_runtime

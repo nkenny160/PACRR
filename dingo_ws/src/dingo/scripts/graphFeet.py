@@ -12,8 +12,11 @@ for i in range(4):
             counter+=1
             step = step.strip()
             currentStep = step.split("\n")
-
+            
             foot = currentStep[2]
+            # print(foot)
+            # foot = foot.replace("0. ", "0.0 ")
+            # print(foot)
             # print(foot)
             x = float(foot[17:-2].split()[i])
             foot = currentStep[3]
@@ -21,6 +24,7 @@ for i in range(4):
             foot = currentStep[4]
             z = float(foot[2:-3].split()[i])
             thisFoot.append((x,y,z))
+            
             if i == 0:
                 timeRange.append(float(currentStep[0][41:].split(",")[4]))
             
@@ -55,29 +59,33 @@ for j in range(4):
 
 
 import matplotlib.pyplot as plt
+for i in range (4):
+    # Create a range of x values (assuming each float corresponds to a point)
+    # foot_x = [tup[0]-0.115 for tup in data[i]]
+    # foot_y = [tup[1] +0.11 for tup in data[i]]
+    # foot_z = [tup[2]+0.2 for tup in data[i]]
+    foot_x = [tup[0] for tup in data[i]]
+    foot_y = [tup[1] for tup in data[i]]
+    foot_z = [tup[2] for tup in data[i]]
+    # x_values = range(1, len(foot_z) + 1)
 
-# Create a range of x values (assuming each float corresponds to a point)
-foot_x = [tup[0]-0.115 for tup in data[0]]
-foot_y = [tup[1] for tup in data[0]]
-foot_z = [tup[2]+0.2 for tup in data[0]]
-# x_values = range(1, len(foot_z) + 1)
+    # Plot the data
+    plt.plot(timeRange, foot_x, marker='o', linestyle='-', label="X")
+    plt.plot(timeRange, foot_y, marker='o', linestyle='-', label="X")
+    plt.plot(timeRange, foot_z, marker='o', linestyle='-', label="Z")
 
-# Plot the data
-plt.plot(timeRange, foot_x, marker='o', linestyle='-', label="X")
-plt.plot(timeRange, foot_z, marker='o', linestyle='-', label="Z")
+    # Set labels for the axes
+    plt.xlabel('Data Points')
+    plt.ylabel('Values')
 
-# Set labels for the axes
-plt.xlabel('Data Points')
-plt.ylabel('Values')
+    # Set a title for the plot
+    plt.title('Float Data Plot')
 
-# Set a title for the plot
-plt.title('Float Data Plot')
+    # Show the plot
+    plt.show()
 
-# Show the plot
-plt.show()
+    # y=foot[1].split()
+    # z = foot[2].split()
 
-# y=foot[1].split()
-# z = foot[2].split()
-
-# print(y)
-# print(z)
+    # print(y)
+    # print(z)

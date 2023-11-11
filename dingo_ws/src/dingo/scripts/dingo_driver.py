@@ -35,6 +35,8 @@ from geometry_msgs.msg import Point, Pose, Quaternion, Twist, Vector3
 from nav_msgs.msg import Odometry
 from dingo_control.util import quaternion_to_euler
 from gazebo_msgs.msg import ModelStates
+from sensor_msgs.msg import LaserScan
+from matplotlib.colors import ListedColormap
 
 if is_physical:
     from dingo_servo_interfacing.HardwareInterface import HardwareInterface
@@ -75,6 +77,18 @@ class DingoDriver:
         self.task_command_sub = rospy.Subscriber("/task_space_cmd", TaskSpace, self.run_task_space_command)
         self.estop_status_sub = rospy.Subscriber("/emergency_stop_status", Bool, self.update_emergency_stop_status)
         self.gazebo_odom_sub = rospy.Subscriber("/gazebo/model_states", ModelStates  ,self.gazebo_odom_callback)
+        self.lider_sub = rospy.Subscriber('/scan', LaserScan, self.lidar_callback)
+        self.scann = LaserScan()
+
+        self.grid = np.zeros((9, 9)) #instead do a 1D array with each cell holding a tree with the head being the x coordinate and then the two branches being how much of the cell is taken and the y coordinate
+        self.colors = ['#008000', '#ff0000']  # Replace with your desired colors
+        self.cmap = ListedColormap(self.colors)
+        self.centerX = 4.0
+        self.centerY = 4.0
+        self.upbound = 8.0
+        self.lobound = 1.0
+        self.flagX = np.zeros(100)
+        self.flagY = np.zeros(100)
 
         self.external_commands_enabled = 0
 
@@ -177,16 +191,21 @@ class DingoDriver:
         now = rospy.get_rostime()
         total_seconds = now.secs + now.nsecs * 1e-9  # Total time in seconds with nanosecond precision
         formatted_time = "{:.3f}".format(total_seconds)  # Format total seconds with 3 decimal places of accuracy
+        measured_yaw = self.state.euler_orientation[0]*180/math.pi+180
 
         # rospy.loginfo("Current time %i %i", now.secs, now.nsecs)
         with open("/home/pacrr/Documents/GitHub/PACRR/dingo_ws/src/feet.txt", "a") as f:
             # f.write(f"Gazebo's Position (x, y, z, theta, time):{position_x:.2f},{position_y:.2f},{position_z:.2f},{yaw_deg:.2f}\n")
             
             f.write(f"Gazebo's Position (x, y, z, theta, time):{position_x:.2f},{position_y:.2f},{position_z:.2f},{yaw_deg:.2f},{formatted_time}\n")
-            f.write("Measured Position x, y:"+str(self.x)+","+str(self.y)+"\n")
+            f.write("Measured Position x, y, theta:"+str(self.x)+","+str(self.y)+","+str(measured_yaw)+"\n")
             f.write("Feet Position:"+str(self.state.foot_locations)+";\n")
 
     
+    def lidar_callback(self, msg):
+        print(len(msg.ranges))
+
+
     
     def run(self):
         

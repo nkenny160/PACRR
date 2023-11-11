@@ -1,0 +1,8 @@
+prefix=/home/pacrr/Documents/GitHub/PACRR/dingo_ws/install
+
+Name: dingo_utilities
+Description: Description of dingo_utilities
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
