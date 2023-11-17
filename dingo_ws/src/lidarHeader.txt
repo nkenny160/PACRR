@@ -1,0 +1,13 @@
+header: 
+  seq: 24
+  stamp: 
+    secs: 1700260709
+    nsecs: 144846000
+  frame_id: "laser"
+angle_min: -3.1415927410125732
+angle_max: 3.1415927410125732
+angle_increment: 0.005482709966599941
+time_increment: 0.00012810190673917532
+scan_time: 0.1468047946691513
+range_min: 0.15000000596046448
+range_max: 12.0

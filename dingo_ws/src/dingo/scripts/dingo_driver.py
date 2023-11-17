@@ -110,6 +110,8 @@ class DingoDriver:
         
         f = open("/home/pacrr/Documents/GitHub/PACRR/dingo_ws/src/feet.txt", "w")
         f.close()
+        f = open("/home/pacrr/Documents/GitHub/PACRR/dingo_ws/src/lidarReadings.txt", "w")
+        f.close()
 
         #back to og code
 
@@ -203,7 +205,11 @@ class DingoDriver:
 
     
     def lidar_callback(self, msg):
-        print(len(msg.ranges))
+        print(msg)
+        with open("/home/pacrr/Documents/GitHub/PACRR/dingo_ws/src/lidarReadings.txt", "a") as f:
+            f.write(str(msg.ranges)+"\n")
+
+        
 
 
     
