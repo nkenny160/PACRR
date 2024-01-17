@@ -76,7 +76,7 @@ class DingoDriver:
         self.joint_command_sub = rospy.Subscriber("/joint_space_cmd", JointSpace, self.run_joint_space_command)
         self.task_command_sub = rospy.Subscriber("/task_space_cmd", TaskSpace, self.run_task_space_command)
         self.estop_status_sub = rospy.Subscriber("/emergency_stop_status", Bool, self.update_emergency_stop_status)
-        self.gazebo_odom_sub = rospy.Subscriber("/gazebo/model_states", ModelStates  ,self.gazebo_odom_callback)
+        # self.gazebo_odom_sub = rospy.Subscriber("/gazebo/model_states", ModelStates  ,self.gazebo_odom_callback)
         self.lider_sub = rospy.Subscriber('/scan', LaserScan, self.lidar_callback)
         self.scann = LaserScan()
 
@@ -205,7 +205,7 @@ class DingoDriver:
 
     
     def lidar_callback(self, msg):
-        print(msg)
+        # print(msg)
         with open("/home/pacrr/Documents/GitHub/PACRR/dingo_ws/src/lidarReadings.txt", "a") as f:
             f.write(str(msg.ranges)+"\n")
 
@@ -410,7 +410,7 @@ class DingoDriver:
             for i in 3:
                 foot_locations[i] = [msg.FR_foot[j], msg.FL_foot[j], msg.RR_foot[j], msg.RL_foot[j]]
                 j = j+1
-            # print(foot_locations)
+            print(foot_locations)
             joint_angles = self.controller.inverse_kinematics(foot_locations, self.config)
             if self.is_sim:
                 self.publish_joints_to_sim(self, joint_angles)
